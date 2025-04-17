@@ -1,0 +1,16 @@
+/bin
+/conda-meta
+/etc
+/include
+/lib
+/man
+/share
+/ssl
+/exp_mac
+/results
+.env
+**/__pycache__/
+__pycache__
+/.pytest_cache
+dev-key.jsonvenv/
+/venv
