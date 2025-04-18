@@ -5,9 +5,9 @@
 from openai import OpenAI
 import base64
 
-client = OpenAI(api_key="123", base_url="http://localhost:8080/v1")
+client = OpenAI(api_key="123-456", base_url="https://806a-182-74-119-254.ngrok-free.app/v1")
 
-model = "OpenGVLab/InternVL3-1B"
+model = "OpenGVLab/InternVL3-2B"
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
