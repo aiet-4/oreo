@@ -2,7 +2,7 @@
 import base64
 import asyncio
 import uuid
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 from orchestrator import Orchestrator
 from receipt_parser import ReceiptParser
@@ -35,7 +35,10 @@ app = FastAPI(title="Receipt Processing API")
 
 
 @app.post("/processReceipt")
-async def upload_receipt(receipt: UploadFile = File(...)):
+async def upload_receipt(
+    employee_id: str = Form(...),
+    receipt: UploadFile = File(...)
+):    
     """
     Upload a receipt image for processing
     
@@ -55,7 +58,7 @@ async def upload_receipt(receipt: UploadFile = File(...)):
             orchestrator.orchestrate(
                 img_base64=img_base64,
                 file_id=file_id,
-                employee_id="EMP002"
+                employee_id=employee_id
             )
         )
         

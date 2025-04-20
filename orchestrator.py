@@ -61,7 +61,8 @@ class Orchestrator:
         }
         
         # Start the agent loop
-        return await self._agent_loop(context)
+        all_context_data =  await self._agent_loop(context)
+        return True
     
     async def _agent_loop(self, context: Dict[str, Any]):
         """
@@ -75,31 +76,32 @@ class Orchestrator:
         """
         is_final_call = False
         
-        while not is_final_call:
-            # Generate the system prompt with relevant rules and context
-            system_prompt = self._generate_system_prompt(context)
+        # Generate the system prompt with relevant rules and context
+        system_prompt = self._generate_system_prompt(context)
+        
+        # Initialize conversation if empty
+        if not context.get("conversation"):
+            employee_id = context.get("employee_id", "Unknown")
+            receipt_type = context.get("receipt_type")
             
-            # Prepare messages for the LLM
+            initial_user_prompt = f"""Process this {receipt_type} receipt for employee ID: {employee_id}.
+
+    Start by generating appropriate tool calls to gather necessary information, validate against policies, and complete the entire reimbursement workflow from verification to notification."""
+
+            # Add the initial user prompt to the conversation history only
+            context["conversation"] = [
+                {"role": "user", "content": initial_user_prompt}
+            ]
+        
+        while not is_final_call:
+            # Prepare messages for each request - system prompt followed by conversation
             messages = [
                 {"role": "system", "content": system_prompt},
             ]
-
-            # Create initial user prompt if this is the first iteration (empty conversation)
-            if not context.get("conversation"):
-                employee_id = context.get("employee_id", "Unknown")
-                receipt_type = context.get("receipt_type")
-                
-                initial_user_prompt = f"""Process this {receipt_type} receipt for employee ID: {employee_id}.
-
-            Start by generating appropriate tool calls to gather necessary information, validate against policies, and complete the entire reimbursement workflow from verification to notification."""
-
-                # Add the initial user prompt to both the messages and the conversation history
-                messages.append({"role": "user", "content": initial_user_prompt})
-                context["conversation"].append({"role": "user", "content": initial_user_prompt})
-            else:
-                # Add existing conversation history
-                for msg in context.get("conversation", []):
-                    messages.append(msg)
+            
+            # Add existing conversation history
+            for msg in context.get("conversation", []):
+                messages.append(msg)
             
             # Call the LLM
             response: ChatCompletion = await asyncio.create_task(asyncio.to_thread(
@@ -113,7 +115,6 @@ class Orchestrator:
             
             # Extract the model's response
             agent_response = response.choices[0].message.content
-
             logger.warning(f"Agent Response: {agent_response}")
             
             # Parse the agent's response to identify the tool and parameters
@@ -139,9 +140,9 @@ class Orchestrator:
                 
                 # Add the tool result to the conversation
                 tool_result_message = f"""<tool_result>
-<tool>{tool_name}</tool>
-<result>{json.dumps(tool_result, indent=2)}</result>
-</tool_result>"""
+    <tool>{tool_name}</tool>
+    <result>{json.dumps(tool_result, indent=2)}</result>
+    </tool_result>"""
                 context["conversation"].append({"role": "user", "content": tool_result_message})
                 
                 # If this was marked as the final tool call, return
@@ -154,8 +155,8 @@ class Orchestrator:
             else:
                 # Tool not found
                 error_message = f"""<tool_error>
-Tool '{tool_name}' not found. Available tools: {', '.join(self.available_tools.keys())}
-</tool_error>"""
+    Tool '{tool_name}' not found. Available tools: {', '.join(self.available_tools.keys())}
+    </tool_error>"""
                 context["conversation"].append({"role": "user", "content": error_message})
         
         return {"status": "completed", "context": context}
@@ -187,10 +188,10 @@ Tool '{tool_name}' not found. Available tools: {', '.join(self.available_tools.k
     Parameters: {{ "src_address": "SOURCE_ADDRESS", "dest_address": "DESTINATION_ADDRESS" }}
 
     4. send_email
-    Parameters: {{ "email_id": "EMAIL_ADDRESS", "subject": "EMAIL_SUBJECT", "content": "EMAIL_CONTENT" }}
+    Parameters: {{ "email_id": "EMPLOYEE_EMAIL_ADDRESS", "subject": "EMAIL_SUBJECT", "content": "EMAIL_CONTENT" }}
 
     INSTRUCTIONS:
-    1. First, collect all necessary information using the appropriate tools.
+    1. First, collect all necessary information like employee details using the appropriate tools.
     2. Validate the receipt against business rules.
     3. If approved, update the relevant expense budgets.
     4. Send a notification email to the employee with the result.
@@ -201,6 +202,16 @@ Tool '{tool_name}' not found. Available tools: {', '.join(self.available_tools.k
     - Wait for the result of each tool call before deciding what to do next.
     - Strictly enforce all business rules in the applicable rule section.
     - For a receipt to be approved, it MUST satisfy ALL conditions in the business rules.
+    - NEVER fabricate new tools, ONLY use the ones provided.
+    - NOT ALL validations require tool calls. If a validation tool exists use it, but if one doesn't do it inside the <reasoning> tags and follow-up with the next tool call.
+
+    EMAIL FORMATTING RULES:
+    - Use HTML tags for formatting the email content
+    - ALWAYS have three sections in the email:
+        <p>Greeting</p>
+        <p>Body content with <br> for line breaks</p>
+        <p>Closing with "HR BOT" at the end</p>
+    - The email must be in a professional tone.
 
     RESPONSE FORMAT:
     You must respond using XML tags for a SINGLE tool call as follows:

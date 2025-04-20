@@ -15,7 +15,7 @@ class AgentsWorker:
             redis_host="localhost", 
             redis_port=6379, 
             redis_db=0,
-            office_address="OSI Systems, HiTech City, Hyderabad"
+            office_address="The Square, KG Halli, D' Souza Road, Ashok Nagar, Bengaluru, Karnataka 560001, India"
     ):
         """
         Initialize the AgentsWorker with Redis connection
@@ -151,9 +151,9 @@ class AgentsWorker:
             # Update expense
             current_amount = employee_data["expenses"].get(expense_type, 0)
             if increment:
-                employee_data["expenses"][expense_type] = current_amount + amount
+                employee_data["expenses"][expense_type] = current_amount + int(float(amount))
             else:
-                employee_data["expenses"][expense_type] = max(0, current_amount - amount)
+                employee_data["expenses"][expense_type] = max(0, current_amount - int(float(amount)))
             
             # Save updated data
             self.redis.set(f"employee:{employee_id}", json.dumps(employee_data))
@@ -177,25 +177,25 @@ class AgentsWorker:
         try:
                         
             # Geocode the addresses to get coordinates
-            src_geocode = [{
-                'geometry': {
-                    'location': {
-                        'lat': 17.4508,
-                        'lng': 78.3798
-                    }
-                }
-            }]
-            dest_geocode = [{
-                'geometry': {
-                    'location': {
-                        'lat': 17.4411,
-                        'lng': 78.3911
-                    }
-                }
-            }]
+            # src_geocode = [{
+            #     'geometry': {
+            #         'location': {
+            #             'lat': 17.4508,
+            #             'lng': 78.3798
+            #         }
+            #     }
+            # }]
+            # dest_geocode = [{
+            #     'geometry': {
+            #         'location': {
+            #             'lat': 17.4411,
+            #             'lng': 78.3911
+            #         }
+            #     }
+            # }]
 
-            # src_geocode = self.gmaps.geocode(src_address)
-            # dest_geocode = self.gmaps.geocode(dest_address)
+            src_geocode = self.gmaps.geocode(src_address)
+            dest_geocode = self.gmaps.geocode(dest_address)
             
             # Extract coordinates
             if src_geocode:
@@ -220,6 +220,8 @@ class AgentsWorker:
             src_distance = geodesic(src_location, self.office_location).kilometers
             dest_distance = geodesic(dest_location, self.office_location).kilometers
             
+            print(f"Source distance: {src_distance} km")
+            print(f"Destination distance: {dest_distance} km")
             # Check if either is within 2.5km
             return src_distance <= 2.5 or dest_distance <= 2.5
             
