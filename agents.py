@@ -244,7 +244,7 @@ class AgentsWorker:
             with open("receipt_data.json", "r") as file: 
                 receipts = json.load(file)
         except Exception as e:
-            print(f"Error loading employee data: {e}")
+            print(f"Error loading receipt data: {e}")
         for receipt in receipts:
         if (
             receipt.get("merchant", "").lower() == receipt_data.get("Merchant/Store name", "").lower() and
