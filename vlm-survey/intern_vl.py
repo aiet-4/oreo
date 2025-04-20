@@ -4,20 +4,20 @@ from openai.types.chat.chat_completion import ChatCompletion
 import base64
 
 class ReceiptParser:
-    def __init__(self, api_key="123-456", base_url="https://2e6e-182-74-119-254.ngrok-free.app/v1"):
+    def __init__(self, api_key="123-456", base_url="https://2e6e-182-74-119-254.ngrok-free.app"):
         self.client = OpenAI(api_key=api_key, base_url=base_url)
     
     def _encode_image(self, image_path):
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode("utf-8")
     
-    async def parse_receipt(
+    def parse_receipt(
             self, 
             image_path, 
             temperature=0.1, 
             seed=1024, 
             max_tokens=512,
-            model="OpenGVLab/InternVL3-2B"        
+            model="vlm"        
     ):
         """
         Parses a receipt image and extracts structured information.
@@ -33,9 +33,7 @@ class ReceiptParser:
         """
         img_base64 = self._encode_image(image_path)
         
-        response : ChatCompletion = asyncio.create_task(
-            asyncio.to_thread(
-            self.client.chat.completions.create,
+        response : ChatCompletion = self.client.chat.completions.create(
             model=model,
             messages=[
                 {
@@ -70,7 +68,15 @@ NOTE:
             ],
             temperature=temperature,
             seed=seed,
-            max_tokens=max_tokens
-        ))
-        
+            max_tokens=max_tokens,
+            
+        )
+
+        print(response.usage)
         return response.choices[0].message.content
+    
+
+if __name__ == "__main__":
+    receipt_parser = ReceiptParser()
+    result = receipt_parser.parse_receipt("img_1.jpg")
+    print(result)

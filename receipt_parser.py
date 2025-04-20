@@ -12,7 +12,7 @@ class ReceiptParser:
     def __init__(
             self, 
             api_key="123-456", 
-            base_url="https://2e6e-182-74-119-254.ngrok-free.app/v1"
+            base_url="https://2e6e-182-74-119-254.ngrok-free.app/"
         ):
         self.client = OpenAI(api_key=api_key, base_url=base_url)
 
@@ -50,7 +50,7 @@ class ReceiptParser:
 - Total Amount
 """,
             "OTHER_EXPENSE" : f"""
-Describe the receipt in not more than 100 words
+Describe the receipt in LESS THAN 30 words
 """
         }
     
@@ -101,7 +101,7 @@ Describe the receipt in not more than 100 words
             temperature=0.1, 
             seed=1024, 
             max_tokens=512,
-            model="OpenGVLab/InternVL3-2B"        
+            model="vlm"        
     )-> ParsedReceipt:
 
         response : ChatCompletion = await asyncio.create_task(asyncio.to_thread(
