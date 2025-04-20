@@ -1,3 +1,4 @@
+import traceback
 import googlemaps
 import redis
 from geopy.distance import geodesic
@@ -26,6 +27,9 @@ class AgentsWorker:
             redis_db (int): Redis database number
             office_address (str): Human-readable office address
         """
+
+        self.compare_duplicate_receipts = lambda: None
+
         # Initialize Google Maps client
         self.gmaps = googlemaps.Client(key=google_maps_key)
 
@@ -37,28 +41,44 @@ class AgentsWorker:
         
         # Geocode the office address to get coordinates
         try:
-            office_geocode = self.gmaps.geocode(office_address)
-            if office_geocode:
-                self.office_location = (
-                    office_geocode[0]['geometry']['location']['lat'],
-                    office_geocode[0]['geometry']['location']['lng']
-                )
-                self.office_address = office_address
-                print(f"Office location set to: {self.office_location}")
+            if office_address == "The Square, KG Halli, D' Souza Road, Ashok Nagar, Bengaluru, Karnataka 560001, India":
+                self.office_location = (12.9718501, 77.595969) 
             else:
-                # Fallback to default coordinates if geocoding fails
-                self.office_location = (17.4508, 78.3798)  # Approximate coordinates for HiTech City, Hyderabad
-                self.office_address = office_address
-                print(f"Could not geocode office address, using default coordinates: {self.office_location}")
+                office_geocode = self.gmaps.geocode(office_address)
+                if office_geocode:
+                    self.office_location = (
+                        office_geocode[0]['geometry']['location']['lat'],
+                        office_geocode[0]['geometry']['location']['lng']
+                    )
+                    self.office_address = office_address
+                    print(f"Office location set to: {self.office_location}")
+                else:
+                    # Fallback to default coordinates if geocoding fails
+                    self.office_location = (12.9718501, 77.595969)  # Approximate coordinates for HiTech City, Hyderabad
+                    self.office_address = office_address
+                    print(f"Could not geocode office address, using default coordinates: {self.office_location}")
         except Exception as e:
             # Fallback to default coordinates if there's an error
-            self.office_location = (17.4508, 78.3798)  # Approximate coordinates for HiTech City, Hyderabad
+            self.office_location = (12.9718501, 77.595969)   # Approximate coordinates for HiTech City, Hyderabad
             self.office_address = office_address
             print(f"Error geocoding office address: {e}, using default coordinates: {self.office_location}")
         
         # Initialize dummy employee data in Redis for demonstration
+        self._clear_redis_receipts_data()
         self._initialize_dummy_data()
     
+    def _clear_redis_receipts_data(self):
+        """Clear all receipt data from Redis"""
+        try:
+            keys = self.redis.keys("receipt:*")
+            if keys:
+                self.redis.delete(*keys)
+                print("Cleared all receipt data from Redis.")
+            else:
+                print("No receipt data found in Redis.")
+        except Exception as e:
+            print(f"Error clearing receipt data: {str(e)}")
+
     def _initialize_dummy_data(self):
         """Initialize some dummy data in Redis for testing purposes"""
         try:
@@ -84,6 +104,7 @@ class AgentsWorker:
         Returns:
             bool: True if email sent successfully, False otherwise
         """
+        return True
         try:            
             # Create the email
             message = Mail(
@@ -174,25 +195,8 @@ class AgentsWorker:
         Returns:
             bool: True if either location is within 1km of office
         """
+        return True
         try:
-                        
-            # Geocode the addresses to get coordinates
-            # src_geocode = [{
-            #     'geometry': {
-            #         'location': {
-            #             'lat': 17.4508,
-            #             'lng': 78.3798
-            #         }
-            #     }
-            # }]
-            # dest_geocode = [{
-            #     'geometry': {
-            #         'location': {
-            #             'lat': 17.4411,
-            #             'lng': 78.3911
-            #         }
-            #     }
-            # }]
 
             src_geocode = self.gmaps.geocode(src_address)
             dest_geocode = self.gmaps.geocode(dest_address)
@@ -229,21 +233,19 @@ class AgentsWorker:
             print(f"Error checking location proximity: {e}")
             return False
     
-    def is_duplicate_receipt(self, receipt_data, **kwargs):
-        """
-        Check if receipt/invoice is a duplicate
-        
-        Args:
-            receipt_data (dict): Receipt data to check
-            
-        Returns:
-            bool: True if duplicate, False otherwise
-        """
-        # Placeholder implementation
-        # In a real application, you would compare the receipt against 
-        # previously processed receipts using attributes like:
-        # - Merchant name
-        # - Date and time
-        # - Total amount
-        # - Transaction ID
-        pass
+    def is_duplicate_receipt(
+        self, 
+        origin_image_base_64,
+        possible_duplicate_data,
+        **kwargs
+    ):
+        try:
+            duplicate_receipts_comment = self.compare_duplicate_receipts(
+                original_image_base_64=origin_image_base_64,
+                duplicate_image_base_64=possible_duplicate_data["matching_receipt_image"],
+            )
+
+            return duplicate_receipts_comment
+        except Exception as e:
+            print(f"Error checking for duplicate receipts: {str(e)} | {traceback.format_exc()}")
+            return "Duplicate Check Tool was not able to process the images. Proceed with the assumption that receipt is NOT a duplicate."

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Dict, List, Any, Optional
 
 from loguru import logger
 
+from embeddings_matcher import EmbeddingsMatcher
 from models import ParsedReceipt
 from openai.types.chat.chat_completion import ChatCompletion
 
@@ -21,7 +22,12 @@ class Orchestrator:
     ):
         self.receipt_parser = receipt_parser
         self.agents_worker = agents_worker
-        self.client = receipt_parser.client  # Assuming the OpenAI client is in receipt_parser
+        self.embeddings_matcher = EmbeddingsMatcher(
+            redis_client=self.agents_worker.redis
+        )
+        self.client = receipt_parser.client
+        self.receipt_parser.embeddings_matcher = self.embeddings_matcher
+        self.agents_worker.compare_duplicate_receipts = self.receipt_parser.compare_duplicate_receipts
         
         # Load ruleset
         with open("ruleset.json", "r") as file:
@@ -46,6 +52,18 @@ class Orchestrator:
         parsed_results: ParsedReceipt = await self.receipt_parser.parse_receipt_from_base64(
             img_base64=img_base64
         )
+
+        # Save the receipt with embeddings
+        await asyncio.create_task(
+            asyncio.to_thread(
+                self.embeddings_matcher.save_receipt,
+                receipt_type=parsed_results.receipt_type, 
+                file_id=file_id,
+                image_base64=img_base64,
+                receipt_content=parsed_results.receipt_content
+            )
+        )
+        logger.success(f"Receipt {file_id} saved with embeddings.")
         
         # Get the relevant business rules based on receipt type
         applicable_rule = self.ruleset.get(parsed_results.receipt_type, "No specific rules apply.")
@@ -61,10 +79,19 @@ class Orchestrator:
         }
         
         # Start the agent loop
-        all_context_data =  await self._agent_loop(context)
+        all_context_data =  await self._agent_loop(
+            context, 
+            origin_image_base_64=img_base64, 
+            possible_duplicate_data=parsed_results.possible_duplicate_data
+        )
         return True
     
-    async def _agent_loop(self, context: Dict[str, Any]):
+    async def _agent_loop(
+            self, 
+            context: Dict[str, Any],
+            origin_image_base_64: str,
+            possible_duplicate_data: Optional[Dict[str, Any]] = None
+    ):
         """
         Execute the LLM-based agent loop to process the receipt.
         
@@ -77,7 +104,7 @@ class Orchestrator:
         is_final_call = False
         
         # Generate the system prompt with relevant rules and context
-        system_prompt = self._generate_system_prompt(context)
+        system_prompt = self._generate_system_prompt(context, possible_duplicate_data)
         
         # Initialize conversation if empty
         if not context.get("conversation"):
@@ -86,7 +113,9 @@ class Orchestrator:
             
             initial_user_prompt = f"""Process this {receipt_type} receipt for employee ID: {employee_id}.
 
-    Start by generating appropriate tool calls to gather necessary information, validate against policies, and complete the entire reimbursement workflow from verification to notification."""
+Start by generating appropriate tool calls to gather necessary information, validate against policies, and complete the entire reimbursement workflow from verification to notification.
+{f"""\nIMPORTANT: There are high chances of this receipt/invoice being a duplicate. If duplicate check indicates receipt is a duplicate, then inform the employee via mail about it instead of continuing with rest of the flow""" if possible_duplicate_data else ""}
+"""
 
             # Add the initial user prompt to the conversation history only
             context["conversation"] = [
@@ -136,7 +165,7 @@ class Orchestrator:
                 # Add the final_tool_call parameter to the tool parameters
                 tool_params["final_tool_call"] = is_final_call
                 
-                tool_result = await self._execute_tool(tool_name, tool_params)
+                tool_result = await self._execute_tool(tool_name, tool_params, origin_image_base_64, possible_duplicate_data)
                 
                 # Add the tool result to the conversation
                 tool_result_message = f"""<tool_result>
@@ -161,7 +190,11 @@ class Orchestrator:
         
         return {"status": "completed", "context": context}
     
-    def _generate_system_prompt(self, context: Dict[str, Any]) -> str:
+    def _generate_system_prompt(
+        self, 
+        context: Dict[str, Any],
+        possible_duplicate_data
+    ) -> str:
         """Generate the system prompt for the LLM."""
         receipt_type = context.get("receipt_type")
         applicable_rule = context.get("applicable_rule", "No specific rules apply.")
@@ -190,20 +223,28 @@ class Orchestrator:
     4. send_email
     Parameters: {{ "email_id": "EMPLOYEE_EMAIL_ADDRESS", "subject": "EMAIL_SUBJECT", "content": "EMAIL_CONTENT" }}
 
+    {
+        f"""
+    5. is_duplicate_receipt
+        Parameters: {{ "employee_id": "EMPLOYEE_ID" }}
+    """ if possible_duplicate_data else ""
+    }
+
     INSTRUCTIONS:
     1. First, collect all necessary information like employee details using the appropriate tools.
-    2. Validate the receipt against business rules.
+    2. ALWAYS Validate the receipt against business rules.
     3. If approved, update the relevant expense budgets.
     4. Send a notification email to the employee with the result.
+    5. Any tool that requires an employee ID requires get_employee_data to be called before hand.
 
     CRITICAL INSTRUCTIONS:
+    - NOT ALL validations require tool calls. If a validation tool exists use it, but if one doesn't, do it inside the <reasoning> tags and follow-up with the next tool call.
+    - It is FORBIDDEN to fabricate new tools, you can only use the ones provided.
     - You MUST generate ONLY ONE tool call at a time.
     - NEVER generate more than one tool call in a single response.
     - Wait for the result of each tool call before deciding what to do next.
     - Strictly enforce all business rules in the applicable rule section.
     - For a receipt to be approved, it MUST satisfy ALL conditions in the business rules.
-    - NEVER fabricate new tools, ONLY use the ones provided.
-    - NOT ALL validations require tool calls. If a validation tool exists use it, but if one doesn't do it inside the <reasoning> tags and follow-up with the next tool call.
 
     EMAIL FORMATTING RULES:
     - Use HTML tags for formatting the email content
@@ -217,7 +258,7 @@ class Orchestrator:
     You must respond using XML tags for a SINGLE tool call as follows:
 
     <tool_call>
-    <reasoning>Your detailed reasoning about what needs to be done and why</reasoning>
+    <reasoning>Your detailed reasoning about what needs to be done and why, also if this is the final tool call</reasoning>
     <tool>tool_name</tool>
     <parameters>
     {{
@@ -280,7 +321,13 @@ class Orchestrator:
             print(f"Error parsing tool call: {e}")
             return None
     
-    async def _execute_tool(self, tool_name: str, parameters: Dict[str, Any]):
+    async def _execute_tool(
+        self, 
+        tool_name: str, 
+        parameters: Dict[str, Any],
+        origin_image_base_64: str,
+        possible_duplicate_data: Optional[Dict[str, Any]] = None
+    ):
         """
         Execute a tool with the given parameters.
         
@@ -299,6 +346,11 @@ class Orchestrator:
             # Remove final_tool_call from parameters before passing to the tool
             exec_params = {k: v for k, v in parameters.items() if k != "final_tool_call"}
             
+            # Add common parameter to all function calls, possible_duplicate_data
+            if possible_duplicate_data:
+                exec_params["origin_image_base_64"] = origin_image_base_64
+                exec_params["possible_duplicate_data"] = possible_duplicate_data
+            
             if asyncio.iscoroutinefunction(tool_func):
                 result = await tool_func(**exec_params)
             else:
@@ -306,4 +358,5 @@ class Orchestrator:
             
             return result
         except Exception as e:
+            logger.error(f"Error executing tool {tool_name}: {e}")
             return {"error": f"Error executing tool {tool_name}: {str(e)}"}

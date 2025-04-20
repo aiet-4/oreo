@@ -14,7 +14,9 @@ import os
 load_dotenv()
 
 # Create a receipt parser instance
-receipt_parser = ReceiptParser()
+receipt_parser = ReceiptParser(
+    together_api_key=os.getenv("TOGETHER_API_KEY"),
+)
 logger.success("Receipt parser Initialized.")
 
 # Create an agents worker instance
