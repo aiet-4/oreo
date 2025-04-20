@@ -39,30 +39,35 @@ class ReceiptParser:
                 {
                     "role": "user",
                     "content": [
+                        {"type": "text", "text": "what is in the images?"},
                         {
                             "type": "image_url",
                             "image_url": {"url": f"data:image/png;base64,{img_base64}"},
                         },
                         {
-                            "type": "text",
-                            "text": f"""
-Please analyze this receipt image and extract the following information in a structured format:
-- Receipt Type ( Only Four Types Allowed: "FOOD_EXPENSE", "TECH_EXPENSE", "TRAVEL_EXPENSE", "OTHER_EXPENSE")
-- Merchant/Store name
-- Date of Purchase
-- Time of Purchase
-- Receipt/transaction number
-- Payment method (cash, credit card, etc.)
-- CGST (Amount)
-- SGST (Amount)
-- Sub Total
-- Total amount
-
-NOTE:
-1. DO NOT FABRICATE any data if not available or unclear
-2. Only answer the above information, NOTHING extra
-""",
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/png;base64,{img_base64}"},
                         },
+#                         {
+#                             "type": "text",
+#                             "text": f"""
+# Please analyze this receipt image and extract the following information in a structured format:
+# - Receipt Type ( Only Four Types Allowed: "FOOD_EXPENSE", "TECH_EXPENSE", "TRAVEL_EXPENSE", "OTHER_EXPENSE")
+# - Merchant/Store name
+# - Date of Purchase
+# - Time of Purchase
+# - Receipt/transaction number
+# - Payment method (cash, credit card, etc.)
+# - CGST (Amount)
+# - SGST (Amount)
+# - Sub Total
+# - Total amount
+
+# NOTE:
+# 1. DO NOT FABRICATE any data if not available or unclear
+# 2. Only answer the above information, NOTHING extra
+# """,
+#                         },
                     ],
                 }
             ],
@@ -75,8 +80,39 @@ NOTE:
         print(response.usage)
         return response.choices[0].message.content
     
+    def get_image_embedding(
+        self,
+        image_path,
+        model="vlm"
+    ):
+        """
+        Generate embeddings for an image.
+        
+        Args:
+            image_path (str): Path to the image file
+            model (str): The embedding model to use
+            
+        Returns:
+            list: The embedding vector for the image
+        """
+        img_base64 = self._encode_image(image_path)
+        
+        # Using the embeddings API endpoint
+        response = self.client.embeddings.create(
+            model=model,
+            input=[
+                {
+                    "type": "image_url", 
+                    "image_url": {"url": f"data:image/jpg;base64,{img_base64}"}
+                }
+            ],
+            encoding_format="float"
+        )
+        
+        return response.data[0].embedding  
 
 if __name__ == "__main__":
     receipt_parser = ReceiptParser()
-    result = receipt_parser.parse_receipt("img_1.jpg")
+    result = receipt_parser.parse_receipt("receipts/others/img_7.jpg")
+    # result = receipt_parser.get_image_embedding("receipts/img_6.jpg")
     print(result)

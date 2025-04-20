@@ -1,21 +1,28 @@
 # receipt_parser.py
 import asyncio
 import re
+from typing import TYPE_CHECKING
 from loguru import logger
 from openai import OpenAI
 from openai.types.chat.chat_completion import ChatCompletion
 import base64
-
 from models import ParsedReceipt
+from together import Together
+if TYPE_CHECKING:
+    from embeddings_matcher import EmbeddingsMatcher
+
 
 class ReceiptParser:
     def __init__(
             self, 
-            api_key="123-456", 
+            together_api_key,
+            api_key="123-456",
             base_url="https://2e6e-182-74-119-254.ngrok-free.app/"
         ):
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
 
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.together_client = Together(api_key=together_api_key)
+        self.embeddings_matcher: 'EmbeddingsMatcher' = None
         self.data_extraction_points = {
             "FOOD_EXPENSE" : f"""
 - Merchant/Store name
@@ -138,7 +145,6 @@ Only respond with the category name. Do not include any other text.
         receipt_type = self.extract_receipt_type(response.choices[0].message.content)
         logger.success(f"Receipt Type: {receipt_type}")
 
-
         response : ChatCompletion = await asyncio.create_task(asyncio.to_thread(
             self.client.chat.completions.create,
             model=model,
@@ -172,7 +178,67 @@ NOTE:
 
         logger.success(f"Receipt Data Extracted: {response.choices[0].message.content}")
 
+        #Check first stage duplicate receipt
+        duplicate_check_task = await asyncio.create_task(
+            asyncio.to_thread(
+                self.embeddings_matcher.is_duplicate_receipt,
+                    receipt_type=receipt_type,
+                    receipt_content=response.choices[0].message.content,
+            )
+        )
+
+        possible_duplicate, duplicate_receipt_data = duplicate_check_task
+
         return ParsedReceipt(
             receipt_type=receipt_type,
-            receipt_content=response.choices[0].message.content
+            receipt_content=response.choices[0].message.content,
+            possible_duplicate_data=duplicate_receipt_data,
         )
+    
+
+    def compare_duplicate_receipts(
+        self,
+        original_image_base_64: str,
+        duplicate_image_base_64: str,
+        model="Qwen/Qwen2.5-VL-72B-Instruct",
+        temperature=0.1, 
+        seed=1024, 
+        max_tokens=300,
+    ):
+        try:
+            response = self.together_client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{original_image_base_64}"},
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{duplicate_image_base_64}"},
+                            },
+                            {
+                            "type": "text",
+                            "text": f"""Compare these receipts and determine if they are duplicates.
+If duplicates: respond with "YES" followed by key similarities.
+If NOT duplicates: respond with "NO" followed by key differences.
+DO NOT fabricate data.
+IMPORTANT: Limit your response to 30 words maximum, focusing only on the most critical points.
+"""
+                        },
+                        ]
+                    }
+                ],
+                temperature=temperature,
+                seed=seed,
+                max_tokens=max_tokens
+            )
+
+            print(f"Duplicate Check Response: {response.choices[0].message.content}")
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Error in duplicate receipt comparison: {e}")
+            return "Duplicate Check Tool was not able to process the images. Proceed with the assumption that receipt is NOT a duplicate."
