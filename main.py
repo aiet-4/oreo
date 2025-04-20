@@ -54,7 +54,8 @@ async def upload_receipt(receipt: UploadFile = File(...)):
         asyncio.create_task(
             orchestrator.orchestrate(
                 img_base64=img_base64,
-                file_id=file_id
+                file_id=file_id,
+                employee_id="EMP002"
             )
         )
         

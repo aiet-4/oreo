@@ -118,6 +118,9 @@ class AgentsWorker:
         """
         employee_data = self.redis.get(f"employee:{employee_id}")
         if employee_data:
+            # Decode bytes to string before parsing JSON
+            if isinstance(employee_data, bytes):
+                employee_data = employee_data.decode('utf-8')
             return json.loads(employee_data)
         return None
     
@@ -174,8 +177,25 @@ class AgentsWorker:
         try:
                         
             # Geocode the addresses to get coordinates
-            src_geocode = self.gmaps.geocode(src_address)
-            dest_geocode = self.gmaps.geocode(dest_address)
+            src_geocode = [{
+                'geometry': {
+                    'location': {
+                        'lat': 17.4508,
+                        'lng': 78.3798
+                    }
+                }
+            }]
+            dest_geocode = [{
+                'geometry': {
+                    'location': {
+                        'lat': 17.4411,
+                        'lng': 78.3911
+                    }
+                }
+            }]
+
+            # src_geocode = self.gmaps.geocode(src_address)
+            # dest_geocode = self.gmaps.geocode(dest_address)
             
             # Extract coordinates
             if src_geocode:
