@@ -1,6 +1,7 @@
 # main.py
 import base64
 import asyncio
+import json
 import uuid
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
@@ -35,7 +36,7 @@ logger.success("Orchestrator Initialized")
 app = FastAPI(title="Receipt Processing API")
 
 def check_duplicate_hash(new_hash: str, hash_file_path: str = "hash.json"):
-        """
+    """
     Check if the given hash already exists in the hash file.
 
     Args:
@@ -52,13 +53,13 @@ def check_duplicate_hash(new_hash: str, hash_file_path: str = "hash.json"):
         print(f"Error loading existing hash data: {e}")
         existing_hashes = []
 
-    if new_hash in existing_hashes:
-        return JSONResponse(
-            status_code=409,
-            content={"error": "Duplicate receipt detected"}
-        )
+        if new_hash in existing_hashes:
+            return JSONResponse(
+                status_code=409,
+                content={"error": "Duplicate receipt detected"}
+            )
 
-    return None
+        return None
 
 
 @app.post("/processReceipt")
@@ -77,8 +78,8 @@ async def upload_receipt(receipt: UploadFile = File(...)):
         new_hash = hashlib.sha256(contents).hexdigest()
 
         dup = check_duplicate_hash(new_hash)
-        if duplicate_response:
-            return duplicate_response 
+        if dup:
+            return dup 
     
         return JSONResponse(
             status_code=200,

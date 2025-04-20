@@ -246,12 +246,12 @@ class AgentsWorker:
         except Exception as e:
             print(f"Error loading receipt data: {e}")
         for receipt in receipts:
-        if (
-            receipt.get("merchant", "").lower() == receipt_data.get("Merchant/Store name", "").lower() and
-            receipt.get("date") == receipt_data.get("Date of purchase") and
-            float(receipt.get("amount", 0)) == float(receipt_data.get("Total amount", 0))
-        ):
-            return True
+            if(
+                receipt.get("merchant", "").lower() == receipt_data.get("Merchant/Store name", "").lower() and
+                receipt.get("date") == receipt_data.get("Date of purchase") and
+                float(receipt.get("amount", 0)) == float(receipt_data.get("Total amount", 0))
+            ):
+                return True
         return False
         # Placeholder implementation
         # In a real application, you would compare the receipt against 
