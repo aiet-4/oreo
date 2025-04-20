@@ -10,6 +10,7 @@ from agents import AgentsWorker
 from loguru import logger
 from dotenv import load_dotenv
 import os
+import hashlib
 
 load_dotenv()
 
@@ -35,6 +36,32 @@ logger.success("Orchestrator Initialized")
 
 app = FastAPI(title="Receipt Processing API")
 
+def check_duplicate_hash(new_hash: str, hash_file_path: str = "hash.json"):
+        """
+    Check if the given hash already exists in the hash file.
+
+    Args:
+        new_hash (str): The SHA-256 hash of the uploaded receipt.
+        hash_file_path (str): Path to the JSON file storing existing hashes.
+
+    Returns:
+        JSONResponse or None: Returns JSONResponse with 409 if duplicate, else None.
+    """
+    try:
+        with open(hash_file_path, "r") as file:
+            existing_hashes = json.load(file)
+    except Exception as e:
+        print(f"Error loading existing hash data: {e}")
+        existing_hashes = []
+
+    if new_hash in existing_hashes:
+        return JSONResponse(
+            status_code=409,
+            content={"error": "Duplicate receipt detected"}
+        )
+
+    return None
+
 
 @app.post("/processReceipt")
 async def upload_receipt(
@@ -51,6 +78,17 @@ async def upload_receipt(
         file_id = str(uuid.uuid4())
         # Read the content of the uploaded file
         contents = await receipt.read()
+        
+        new_hash = hashlib.sha256(contents).hexdigest()
+
+        dup = check_duplicate_hash(new_hash)
+        if duplicate_response:
+            return duplicate_response 
+    
+        return JSONResponse(
+            status_code=200,
+            content={"message": "Receipt uploaded successfully"}
+        )
         
         # Convert to base64
         img_base64 = base64.b64encode(contents).decode("utf-8")
