@@ -237,6 +237,22 @@ class AgentsWorker:
         Returns:
             bool: True if duplicate, False otherwise
         """
+        """
+        Have to create a receipt_json fle which stores every reimbursed receipt's data
+        """
+        try:
+            with open("receipt_data.json", "r") as file: 
+                receipts = json.load(file)
+        except Exception as e:
+            print(f"Error loading employee data: {e}")
+        for receipt in receipts:
+        if (
+            receipt.get("merchant", "").lower() == receipt_data.get("Merchant/Store name", "").lower() and
+            receipt.get("date") == receipt_data.get("Date of purchase") and
+            float(receipt.get("amount", 0)) == float(receipt_data.get("Total amount", 0))
+        ):
+            return True
+        return False
         # Placeholder implementation
         # In a real application, you would compare the receipt against 
         # previously processed receipts using attributes like:
