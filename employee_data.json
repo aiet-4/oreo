@@ -1,0 +1,202 @@
+{
+    "EMP001": {
+        "name": "Ravi Teja",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 5,
+        "expenses": {
+            "FOOD_EXPENSE": 983,
+            "TRAVEL_EXPENSE": 1770,
+            "TECH_EXPENSE": 2413
+        }
+    },
+    "EMP002": {
+        "name": "Vignesh Kumar",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 3,
+        "expenses": {
+            "FOOD_EXPENSE": 711,
+            "TRAVEL_EXPENSE": 587,
+            "TECH_EXPENSE": 2266
+        }
+    },
+    "EMP003": {
+        "name": "Aditya Kapoor",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 5,
+        "expenses": {
+            "FOOD_EXPENSE": 623,
+            "TRAVEL_EXPENSE": 1883,
+            "TECH_EXPENSE": 2247
+        }
+    },
+    "EMP004": {
+        "name": "Arjun Verma",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 5,
+        "expenses": {
+            "FOOD_EXPENSE": 240,
+            "TRAVEL_EXPENSE": 1147,
+            "TECH_EXPENSE": 1331
+        }
+    },
+    "EMP005": {
+        "name": "Ishita Gupta",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 4,
+        "expenses": {
+            "FOOD_EXPENSE": 586,
+            "TRAVEL_EXPENSE": 540,
+            "TECH_EXPENSE": 2296
+        }
+    },
+    "EMP006": {
+        "name": "Anusha Nair",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 1,
+        "expenses": {
+            "FOOD_EXPENSE": 453,
+            "TRAVEL_EXPENSE": 683,
+            "TECH_EXPENSE": 1202
+        }
+    },
+    "EMP007": {
+        "name": "Lakshmi Menon",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 1,
+        "expenses": {
+            "FOOD_EXPENSE": 594,
+            "TRAVEL_EXPENSE": 1229,
+            "TECH_EXPENSE": 2059
+        }
+    },
+    "EMP008": {
+        "name": "Shruthi Rao",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 2,
+        "expenses": {
+            "FOOD_EXPENSE": 785,
+            "TRAVEL_EXPENSE": 1137,
+            "TECH_EXPENSE": 1945
+        }
+    },
+    "EMP009": {
+        "name": "Kavya Bhatia",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 3,
+        "expenses": {
+            "FOOD_EXPENSE": 656,
+            "TRAVEL_EXPENSE": 784,
+            "TECH_EXPENSE": 933
+        }
+    },
+    "EMP010": {
+        "name": "Karthik Raj",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 5,
+        "expenses": {
+            "FOOD_EXPENSE": 427,
+            "TRAVEL_EXPENSE": 913,
+            "TECH_EXPENSE": 2079
+        }
+    },
+    "EMP011": {
+        "name": "Meghana Iyer",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 3,
+        "expenses": {
+            "FOOD_EXPENSE": 364,
+            "TRAVEL_EXPENSE": 1485,
+            "TECH_EXPENSE": 1342
+        }
+    },
+    "EMP012": {
+        "name": "Priya Chauhan",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 5,
+        "expenses": {
+            "FOOD_EXPENSE": 606,
+            "TRAVEL_EXPENSE": 1988,
+            "TECH_EXPENSE": 907
+        }
+    },
+    "EMP013": {
+        "name": "Tanya Malhotra",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 5,
+        "expenses": {
+            "FOOD_EXPENSE": 765,
+            "TRAVEL_EXPENSE": 932,
+            "TECH_EXPENSE": 1320
+        }
+    },
+    "EMP014": {
+        "name": "Preethi Suresh",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 2,
+        "expenses": {
+            "FOOD_EXPENSE": 546,
+            "TRAVEL_EXPENSE": 872,
+            "TECH_EXPENSE": 1278
+        }
+    },
+    "EMP015": {
+        "name": "Divya Reddy",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 3,
+        "expenses": {
+            "FOOD_EXPENSE": 949,
+            "TRAVEL_EXPENSE": 1423,
+            "TECH_EXPENSE": 1706
+        }
+    },
+    "EMP016": {
+        "name": "Sai Kiran",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 1,
+        "expenses": {
+            "FOOD_EXPENSE": 260,
+            "TRAVEL_EXPENSE": 779,
+            "TECH_EXPENSE": 2486
+        }
+    },
+    "EMP017": {
+        "name": "Aarav Sharma",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 2,
+        "expenses": {
+            "FOOD_EXPENSE": 981,
+            "TRAVEL_EXPENSE": 1518,
+            "TECH_EXPENSE": 1985
+        }
+    },
+    "EMP018": {
+        "name": "Ananya Khanna",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 5,
+        "expenses": {
+            "FOOD_EXPENSE": 713,
+            "TRAVEL_EXPENSE": 1250,
+            "TECH_EXPENSE": 1807
+        }
+    },
+    "EMP019": {
+        "name": "Rohan Singh",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 3,
+        "expenses": {
+            "FOOD_EXPENSE": 831,
+            "TRAVEL_EXPENSE": 1668,
+            "TECH_EXPENSE": 2047
+        }
+    },
+    "EMP020": {
+        "name": "Vivaan Mehta",
+        "email": "bharatdeep.race@gmail.com",
+        "level": 4,
+        "expenses": {
+            "FOOD_EXPENSE": 715,
+            "TRAVEL_EXPENSE": 1129,
+            "TECH_EXPENSE": 1618
+        }
+    }
+}

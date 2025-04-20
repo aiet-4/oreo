@@ -6,14 +6,28 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from orchestrator import Orchestrator
 from receipt_parser import ReceiptParser
+from agents import AgentsWorker
 from loguru import logger
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # Create a receipt parser instance
 receipt_parser = ReceiptParser()
 logger.success("Receipt parser Initialized.")
 
+# Create an agents worker instance
+agents_worker = AgentsWorker(
+    redis_password=os.getenv("REDIS_PASSWORD"),
+    google_maps_key=os.getenv("GOOGLE_MAPS_API_KEY"),
+    sendgrid_api_key=os.getenv("SENDGRID_API_KEY"),
+)
+logger.success("Agents worker Initialized.")
+
 orchestrator = Orchestrator(
     receipt_parser=receipt_parser,
+    agents_worker=agents_worker
 )
 logger.success("Orchestrator Initialized")
 
