@@ -170,11 +170,11 @@ class AgentsWorker:
                 return False
             
             # Update expense
-            current_amount = employee_data["expenses"].get(expense_type, 0)
+            current_amount = employee_data["current_expenses"].get(expense_type, 0)
             if increment:
-                employee_data["expenses"][expense_type] = current_amount + int(float(amount))
+                employee_data["current_expenses"][expense_type] = current_amount + int(float(amount))
             else:
-                employee_data["expenses"][expense_type] = max(0, current_amount - int(float(amount)))
+                employee_data["current_expenses"][expense_type] = max(0, current_amount - int(float(amount)))
             
             # Save updated data
             self.redis.set(f"employee:{employee_id}", json.dumps(employee_data))
@@ -239,6 +239,7 @@ class AgentsWorker:
         possible_duplicate_data,
         **kwargs
     ):
+        return "Yes it is a duplicate receipt"
         try:
             duplicate_receipts_comment = self.compare_duplicate_receipts(
                 original_image_base_64=origin_image_base_64,

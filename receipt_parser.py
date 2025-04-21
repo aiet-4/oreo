@@ -28,6 +28,7 @@ class ReceiptParser:
 - Merchant/Store name
 - Date of Purchase
 - Time of Purchase
+- Time of Purchase is After 7PM (Yes/No)
 - Receipt/transaction number
 - Payment method (cash, credit card, etc.)
 - Total Tax ( Use if CGST and SGST are not available)

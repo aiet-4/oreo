@@ -3,7 +3,7 @@
         "name": "Ravi Teja",
         "email": "bharatdeep.race@gmail.com",
         "level": 5,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 983,
             "TRAVEL_EXPENSE": 1770,
             "TECH_EXPENSE": 2413
@@ -13,7 +13,7 @@
         "name": "Vignesh Kumar",
         "email": "bharatdeep.race@gmail.com",
         "level": 3,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 711,
             "TRAVEL_EXPENSE": 587,
             "TECH_EXPENSE": 2266
@@ -23,7 +23,7 @@
         "name": "Aditya Kapoor",
         "email": "bharatdeep.race@gmail.com",
         "level": 5,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 623,
             "TRAVEL_EXPENSE": 1883,
             "TECH_EXPENSE": 2247
@@ -33,7 +33,7 @@
         "name": "Arjun Verma",
         "email": "bharatdeep.race@gmail.com",
         "level": 5,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 240,
             "TRAVEL_EXPENSE": 1147,
             "TECH_EXPENSE": 1331
@@ -43,7 +43,7 @@
         "name": "Ishita Gupta",
         "email": "bharatdeep.race@gmail.com",
         "level": 4,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 586,
             "TRAVEL_EXPENSE": 540,
             "TECH_EXPENSE": 2296
@@ -53,7 +53,7 @@
         "name": "Anusha Nair",
         "email": "bharatdeep.race@gmail.com",
         "level": 1,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 453,
             "TRAVEL_EXPENSE": 683,
             "TECH_EXPENSE": 1202
@@ -63,7 +63,7 @@
         "name": "Lakshmi Menon",
         "email": "bharatdeep.race@gmail.com",
         "level": 1,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 594,
             "TRAVEL_EXPENSE": 1229,
             "TECH_EXPENSE": 2059
@@ -73,7 +73,7 @@
         "name": "Shruthi Rao",
         "email": "bharatdeep.race@gmail.com",
         "level": 2,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 785,
             "TRAVEL_EXPENSE": 1137,
             "TECH_EXPENSE": 1945
@@ -83,7 +83,7 @@
         "name": "Kavya Bhatia",
         "email": "bharatdeep.race@gmail.com",
         "level": 3,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 656,
             "TRAVEL_EXPENSE": 784,
             "TECH_EXPENSE": 933
@@ -93,7 +93,7 @@
         "name": "Karthik Raj",
         "email": "bharatdeep.race@gmail.com",
         "level": 5,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 427,
             "TRAVEL_EXPENSE": 913,
             "TECH_EXPENSE": 2079
@@ -103,7 +103,7 @@
         "name": "Meghana Iyer",
         "email": "bharatdeep.race@gmail.com",
         "level": 3,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 364,
             "TRAVEL_EXPENSE": 1485,
             "TECH_EXPENSE": 1342
@@ -113,7 +113,7 @@
         "name": "Priya Chauhan",
         "email": "bharatdeep.race@gmail.com",
         "level": 5,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 606,
             "TRAVEL_EXPENSE": 1988,
             "TECH_EXPENSE": 907
@@ -123,7 +123,7 @@
         "name": "Tanya Malhotra",
         "email": "bharatdeep.race@gmail.com",
         "level": 5,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 765,
             "TRAVEL_EXPENSE": 932,
             "TECH_EXPENSE": 1320
@@ -133,7 +133,7 @@
         "name": "Preethi Suresh",
         "email": "bharatdeep.race@gmail.com",
         "level": 2,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 546,
             "TRAVEL_EXPENSE": 872,
             "TECH_EXPENSE": 1278
@@ -143,7 +143,7 @@
         "name": "Divya Reddy",
         "email": "bharatdeep.race@gmail.com",
         "level": 3,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 949,
             "TRAVEL_EXPENSE": 1423,
             "TECH_EXPENSE": 1706
@@ -153,7 +153,7 @@
         "name": "Sai Kiran",
         "email": "bharatdeep.race@gmail.com",
         "level": 1,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 260,
             "TRAVEL_EXPENSE": 779,
             "TECH_EXPENSE": 2486
@@ -163,7 +163,7 @@
         "name": "Aarav Sharma",
         "email": "bharatdeep.race@gmail.com",
         "level": 2,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 981,
             "TRAVEL_EXPENSE": 1518,
             "TECH_EXPENSE": 1985
@@ -173,7 +173,7 @@
         "name": "Ananya Khanna",
         "email": "bharatdeep.race@gmail.com",
         "level": 5,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 713,
             "TRAVEL_EXPENSE": 1250,
             "TECH_EXPENSE": 1807
@@ -183,7 +183,7 @@
         "name": "Rohan Singh",
         "email": "bharatdeep.race@gmail.com",
         "level": 3,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 831,
             "TRAVEL_EXPENSE": 1668,
             "TECH_EXPENSE": 2047
@@ -193,7 +193,7 @@
         "name": "Vivaan Mehta",
         "email": "bharatdeep.race@gmail.com",
         "level": 4,
-        "expenses": {
+        "current_expenses": {
             "FOOD_EXPENSE": 715,
             "TRAVEL_EXPENSE": 1129,
             "TECH_EXPENSE": 1618

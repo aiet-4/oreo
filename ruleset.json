@@ -1,6 +1,7 @@
 {
-    "FOOD_EXPENSE": "Food reimbursement is permitted for employees in Levels 2, 3, and 4 only. Orders must be placed post 7:00 PM, and the total expense must not exceed ₹3,000.",
-    "TRAVEL_EXPENSE": "Cab travel expenses up to ₹1,000 are eligible for reimbursement, provided either the pick-up or drop-off location is within 1 km of the office premises.",
-    "TECH_EXPENSE": "Reimbursement for tech-related purchases is limited to laptop accessories, including mouse, headphones/earphones, mouse pad, keyboard, desktop microphone, and webcam. The total claim must not exceed ₹5,000. Any requests for items outside this list require prior managerial approval.",
-    "OTHER_EXPENSE": "Reimbursement for items not listed under Food, Travel, or Tech expenses is not permitted. All custom claims must be pre-approved by the manager."
+    "FOOD_EXPENSE": "1. Time of Purchase MUST BE after 7PM.\n2. Food reimbursement is permitted for employees in Levels 2, 3, and 4 only.\n3. Total expense must not exceed ₹3,000.",
+    "TRAVEL_EXPENSE": "1. Total amount for travel fare of the receipt/invoice must be below Rs 1000.\n2. Either the pick-up or drop-off location must be within 1 km of the office premises.\n3. Reimbursement is permitted for all levels except level 5.\n4. Must collect employee email id before sending email",
+    "TECH_EXPENSE": "1. Reimbursement is limited to laptop accessories: mouse, headphones/earphones, mouse pad, keyboard, desktop microphone, and webcam.\n2. The total claim must not exceed ₹5,000.\n3. Items outside this list require prior managerial approval.",
+    "OTHER_EXPENSE": "1. Reimbursement for items not listed under Food, Travel, or Tech expenses is not permitted.\n2. All custom claims must be pre-approved by the manager."
 }
+  
