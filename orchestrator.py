@@ -267,10 +267,10 @@ IMPORTANT: There are high chances of this receipt/invoice being a duplicate, per
             
             # Call the LLM
             response: ChatCompletion = await asyncio.create_task(asyncio.to_thread(
-                # self.together_client.chat.completions.create,
-                # model="Qwen/Qwen2.5-7B-Instruct-Turbo",
-                self.client.chat.completions.create,
-                model="action",
+                self.together_client.chat.completions.create,
+                model="Qwen/Qwen2.5-7B-Instruct-Turbo",
+                # self.client.chat.completions.create,
+                # model="action",
                 temperature=0.3,
                 seed=42,
                 max_tokens=400,
