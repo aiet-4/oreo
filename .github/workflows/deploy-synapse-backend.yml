@@ -1,0 +1,64 @@
+name: Deploy OREO
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to Deploy"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
+      branch:
+        description: "Branch to Deploy From"
+        required: false
+        default: "main"
+
+env:
+  IMAGE_NAME: oreo
+  SERVICE_NAME: oreo
+  REGION: us-east1
+  DEPLOYMENT_VERSION: ${{ github.run_number }}
+
+jobs:
+  deploy:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - id: auth
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ github.event.inputs.environment == 'prod' && secrets.GCP_SA_KEY_PROD || secrets.GCP_SA_KEY_DEV }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Set Project ID
+        run: |
+          echo "PROJECT_ID=${{ github.event.inputs.environment == 'prod' && 'synapse-ai-444020' || 'synapse-ai-444020' }}" >> $GITHUB_ENV
+          echo "ENV_FILE=env-${{ github.event.inputs.environment }}.yaml" >> $GITHUB_ENV
+
+      - name: Build and Push
+        run: |
+          gcloud auth configure-docker
+          docker build -t gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE_NAME }}:${{ env.DEPLOYMENT_VERSION }} .
+          docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE_NAME }}:${{ env.DEPLOYMENT_VERSION }}
+
+      - name: Deploy
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE_NAME }}:${{ env.DEPLOYMENT_VERSION }} \
+            --env-vars-file ${{ env.ENV_FILE }} \
+            --region ${{ env.REGION }} \
+            --allow-unauthenticated \
+            --platform managed \
+            --project ${{ env.PROJECT_ID }}
