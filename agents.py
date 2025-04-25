@@ -66,7 +66,7 @@ class AgentsWorker:
         # Initialize dummy employee data in Redis for demonstration
         self._clear_redis_receipts_data()
         self._initialize_dummy_data()
-    
+
     def _clear_redis_receipts_data(self):
         """Clear all receipt data from Redis"""
         try:
@@ -78,6 +78,50 @@ class AgentsWorker:
                 print("No receipt data found in Redis.")
         except Exception as e:
             print(f"Error clearing receipt data: {str(e)}")
+
+    def get_employees_details(
+        self
+    ):
+        try:
+            # Fetch all employee data from Redis
+            keys = self.redis.keys("employee:*")
+            employees = {}
+            for key in keys:
+                emp_id = key.decode('utf-8').split(":")[1]
+                emp_data = self.redis.get(key)
+                if emp_data:
+                    # Decode bytes to string before parsing JSON
+                    if isinstance(emp_data, bytes):
+                        emp_data = emp_data.decode('utf-8')
+                    employees[emp_id] = json.loads(emp_data)
+            return employees
+        except Exception as e:
+            print(f"Error fetching employee details: {str(e)}")
+            return {}
+        
+    def add_employee(
+        self,
+        employee_id,
+        employee_details
+    ):
+        """
+        Add a new employee to Redis.
+        
+        Args:
+            employee_details (dict): Dictionary containing employee data. 
+                                     Must include an 'employee_id' key.
+        Returns:
+            bool: True if successfully added, False otherwise.
+        """
+        try:
+            redis_key = f"employee:{employee_id}"
+            self.redis.set(redis_key, json.dumps(employee_details))
+            print(f"Added/Updated employee: {employee_id}")
+            return True
+
+        except Exception as e:
+            print(f"Error adding employee: {str(e)}")
+            return False
 
     def _initialize_dummy_data(self):
         """Initialize some dummy data in Redis for testing purposes"""
@@ -104,7 +148,19 @@ class AgentsWorker:
         Returns:
             bool: True if email sent successfully, False otherwise
         """
-        return True
+        self.update_stage(
+            file_id=kwargs.get("file_id"),
+            stage=6,
+            sub_stage=kwargs.get("max_iterations"),
+            details={
+                "file_id" : kwargs.get("file_id"),
+                "employee_id" : kwargs.get("employee_id"),
+                "email_id" : email_id,
+                "subject" : subject,
+                "content" : content,
+                "stage_name" : "Send Email"
+            }
+        )
         try:            
             # Create the email
             message = Mail(
@@ -138,6 +194,17 @@ class AgentsWorker:
             dict: Employee data or None if not found
         """
         employee_data = self.redis.get(f"employee:{employee_id}")
+        self.update_stage(
+            file_id=kwargs.get("file_id"),
+            stage=6,
+            sub_stage=kwargs.get("max_iterations"),
+            details={
+                "file_id" : kwargs.get("file_id"),
+                "employee_id" : kwargs.get("employee_id"),
+                "stage_name" : "Get Employee Details",
+                "employee_data" : employee_data
+            }
+        )        
         if employee_data:
             # Decode bytes to string before parsing JSON
             if isinstance(employee_data, bytes):
@@ -157,7 +224,7 @@ class AgentsWorker:
             
         Returns:
             bool: True if update successful, False otherwise
-        """
+        """             
         try:
             # Get current employee data
             employee_data = self.get_employee_data(employee_id)
@@ -173,8 +240,34 @@ class AgentsWorker:
             current_amount = employee_data["current_expenses"].get(expense_type, 0)
             if increment:
                 employee_data["current_expenses"][expense_type] = current_amount + int(float(amount))
-            else:
+                self.update_stage(
+                    file_id=kwargs.get("file_id"),
+                    stage=6,
+                    sub_stage=kwargs.get("max_iterations"),
+                    details={
+                        "file_id" : kwargs.get("file_id"),
+                        "employee_id" : kwargs.get("employee_id"),
+                        "stage_name" : "Updating Employee Expense",
+                        "update_type" : "Incrementing",
+                        "from" : current_amount,
+                        "to" : current_amount + int(float(amount))
+                    }
+                )             
+            else:                
                 employee_data["current_expenses"][expense_type] = max(0, current_amount - int(float(amount)))
+                self.update_stage(
+                    file_id=kwargs.get("file_id"),
+                    stage=6,
+                    sub_stage=kwargs.get("max_iterations"),
+                    details={
+                        "file_id" : kwargs.get("file_id"),
+                        "employee_id" : kwargs.get("employee_id"),
+                        "stage_name" : "Updating Employee Expense",
+                        "update_type" : "Decrementing",
+                        "from" : current_amount,
+                        "to" : max(0, current_amount - int(float(amount)))
+                    }
+                )
             
             # Save updated data
             self.redis.set(f"employee:{employee_id}", json.dumps(employee_data))
@@ -194,8 +287,8 @@ class AgentsWorker:
             
         Returns:
             bool: True if either location is within 1km of office
-        """
-        return True
+        """      
+        # return True
         try:
 
             src_geocode = self.gmaps.geocode(src_address)
@@ -227,6 +320,21 @@ class AgentsWorker:
             print(f"Source distance: {src_distance} km")
             print(f"Destination distance: {dest_distance} km")
             # Check if either is within 2.5km
+
+            self.update_stage(
+                file_id=kwargs.get("file_id"),
+                stage=6,
+                sub_stage=kwargs.get("max_iterations"),
+                details={
+                    "file_id" : kwargs.get("file_id"),
+                    "employee_id" : kwargs.get("employee_id"),
+                    "stage_name" : "Checking Location Proximity to Office",
+                    "nearby" : src_distance <= 2.5 or dest_distance <= 2.5,
+                    "src" : src_location,
+                    "dest" : dest_location,
+                    "office" : self.office_location
+                }
+            ) 
             return src_distance <= 2.5 or dest_distance <= 2.5
             
         except Exception as e:
@@ -239,14 +347,72 @@ class AgentsWorker:
         possible_duplicate_data,
         **kwargs
     ):
-        return "Yes it is a duplicate receipt"
         try:
             duplicate_receipts_comment = self.compare_duplicate_receipts(
                 original_image_base_64=origin_image_base_64,
                 duplicate_image_base_64=possible_duplicate_data["matching_receipt_image"],
             )
 
+            self.update_stage(
+                file_id=kwargs.get("file_id"),
+                stage=6,
+                sub_stage=kwargs.get("max_iterations"),
+                details={
+                    "file_id" : kwargs.get("file_id"),
+                    "employee_id" : kwargs.get("employee_id"),
+                    "stage_name" : "Duplicate Check using Large VLM",
+                    "comment" : duplicate_receipts_comment
+                }
+            ) 
             return duplicate_receipts_comment
         except Exception as e:
             print(f"Error checking for duplicate receipts: {str(e)} | {traceback.format_exc()}")
             return "Duplicate Check Tool was not able to process the images. Proceed with the assumption that receipt is NOT a duplicate."
+        
+    def update_stage(
+        self,
+        file_id,
+        stage,
+        details,
+        sub_stage=None
+    ):
+        try:
+            # Create a Redis key for the file
+            file_key = f"files:{file_id}"
+            
+            # If sub_stage exists, include it in the stage key
+            if sub_stage is not None:
+                stage_key = f"{file_key}:stage:{stage}:{sub_stage}"
+            else:
+                stage_key = f"{file_key}:stage:{stage}"
+            
+            # Store stage details under the stage-specific key
+            details["stage"] = stage
+            if sub_stage:
+                details["sub_stage"] = sub_stage
+            self.redis.set(stage_key, json.dumps(details))
+            return True
+
+        except Exception as e:
+            print(f"Error updating stage: {str(e)}")
+            return False
+        
+    def get_all_files_details(
+        self
+    ):
+        try:
+            # Fetch all employee data from Redis
+            keys = self.redis.keys("files:*")
+            employees = {}
+            for key in keys:
+                emp_id = key.decode('utf-8').split(":")[1]
+                emp_data = self.redis.get(key)
+                if emp_data:
+                    # Decode bytes to string before parsing JSON
+                    if isinstance(emp_data, bytes):
+                        emp_data = emp_data.decode('utf-8')
+                    employees[emp_id] = json.loads(emp_data)
+            return employees
+        except Exception as e:
+            print(f"Error fetching files details: {str(e)}")
+            return {}

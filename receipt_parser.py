@@ -1,5 +1,6 @@
 # receipt_parser.py
 import asyncio
+import json
 import re
 from typing import TYPE_CHECKING
 from loguru import logger
@@ -23,44 +24,9 @@ class ReceiptParser:
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.together_client = Together(api_key=together_api_key)
         self.embeddings_matcher: 'EmbeddingsMatcher' = None
-        self.data_extraction_points = {
-            "FOOD_EXPENSE" : f"""
-- Merchant/Store name
-- Date of Purchase
-- Time of Purchase
-- Time of Purchase is After 7PM (Yes/No)
-- Receipt/transaction number
-- Payment method (cash, credit card, etc.)
-- Total Tax ( Use if CGST and SGST are not available)
-- Total amount
-""",
-            "TRAVEL_EXPENSE" : f"""
-- Merchant/Store Name
-- Date of Purchase
-- Time of Purchase
-- Date of Travel
-- Time of Travel
-- Travelling Mode (Taxi Cab, Flight, Train, Bus, etc.)
-- Jounrey Start Point
-- Journey End Point 
-- Total amount
-""",
-            "TECH_EXPENSE" : f"""
-- Merchant/Store Name
-- Date of Purchase
-- Purchase Mode (Online, Offline)
-- Product Name
-- Product Category (Laptop, Mobile, etc.)
-- Product Model
-- Product Serial Number
-- Payment Mode (cash, credit card, etc.)
-- Total Tax
-- Total Amount
-""",
-            "OTHER_EXPENSE" : f"""
-Describe the receipt in LESS THAN 30 words
-"""
-        }
+        self.update_stage = None
+        with open("ocr_instructions.json", "r") as file:
+            self.data_extraction_points = json.load(file)
     
     def _encode_image(
             self, 
@@ -105,6 +71,8 @@ Describe the receipt in LESS THAN 30 words
 
     async def parse_receipt_from_base64(
             self, 
+            file_id,
+            employee_id,
             img_base64,
             temperature=0.1, 
             seed=1024, 
@@ -145,6 +113,16 @@ Only respond with the category name. Do not include any other text.
         
         receipt_type = self.extract_receipt_type(response.choices[0].message.content)
         logger.success(f"Receipt Type: {receipt_type}")
+        self.update_stage(
+            file_id=file_id,
+            stage=2,
+            details={
+                "file_id" : file_id,
+                "employee_id" : employee_id,
+                "receipt_type" : receipt_type,
+                "stage_name" : "Identified Receipt Type"
+            }
+        )
 
         response : ChatCompletion = await asyncio.create_task(asyncio.to_thread(
             self.client.chat.completions.create,
@@ -190,13 +168,25 @@ NOTE:
 
         possible_duplicate, duplicate_receipt_data = duplicate_check_task
 
+        self.update_stage(
+            file_id=file_id,
+            stage=3,
+            details={
+                "file_id" : file_id,
+                "employee_id" : employee_id,
+                "extracted_content" : response.choices[0].message.content,
+                "possible_duplicate" : possible_duplicate,
+                "duplicate_receipt_data" : duplicate_receipt_data,
+                "stage_name" : "Content Extraction (OCR) using InternVL"
+            }
+        )
+
         return ParsedReceipt(
             receipt_type=receipt_type,
             receipt_content=response.choices[0].message.content,
             possible_duplicate_data=duplicate_receipt_data,
         )
     
-
     def compare_duplicate_receipts(
         self,
         original_image_base_64: str,

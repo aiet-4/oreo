@@ -28,6 +28,7 @@ class Orchestrator:
         self.client = receipt_parser.client
         self.together_client = receipt_parser.together_client
         self.receipt_parser.embeddings_matcher = self.embeddings_matcher
+        self.receipt_parser.update_stage = self.agents_worker.update_stage
         self.agents_worker.compare_duplicate_receipts = self.receipt_parser.compare_duplicate_receipts
         
         # Load ruleset
@@ -51,6 +52,8 @@ class Orchestrator:
     ):
         # Parse the receipt
         parsed_results: ParsedReceipt = await self.receipt_parser.parse_receipt_from_base64(
+            file_id=file_id,
+            employee_id=employee_id,
             img_base64=img_base64
         )
 
@@ -65,6 +68,15 @@ class Orchestrator:
             )
         )
         logger.success(f"Receipt {file_id} saved with embeddings.")
+        self.agents_worker.update_stage(
+            file_id=file_id,
+            stage=4,
+            details={
+                "file_id" : file_id,
+                "employee_id" : employee_id,
+                "stage_name" : "Text Embeddings on Extracted OCR Content"
+            }
+        )
         
         # Get the relevant business rules based on receipt type
         applicable_rule = self.ruleset.get(parsed_results.receipt_type, "No specific rules apply.")
@@ -83,17 +95,20 @@ class Orchestrator:
         all_context_data =  await self._agent_loop(
             context, 
             origin_image_base_64=img_base64, 
-            possible_duplicate_data=parsed_results.possible_duplicate_data
+            possible_duplicate_data=parsed_results.possible_duplicate_data,
         )
         logger.success(f"Orchestration completed for receipt {file_id}.")
         return True
     
     async def _execute_tool(
         self, 
+        file_id,
+        employee_id,
+        max_iterations,
         tool_name: str, 
         parameters: Dict[str, Any],
         origin_image_base_64: str,
-        possible_duplicate_data: Optional[Dict[str, Any]] = None
+        possible_duplicate_data: Optional[Dict[str, Any]] = None,
     ):
         """
         Execute a tool with the given parameters.
@@ -117,6 +132,10 @@ class Orchestrator:
             if possible_duplicate_data:
                 exec_params["origin_image_base_64"] = origin_image_base_64
                 exec_params["possible_duplicate_data"] = possible_duplicate_data
+
+            exec_params["file_id"] = file_id
+            exec_params["employee_id"] = employee_id
+            exec_params["max_iterations"] = max_iterations
             
             if asyncio.iscoroutinefunction(tool_func):
                 result = await tool_func(**exec_params)
@@ -231,9 +250,22 @@ class Orchestrator:
         """
         is_final_call = False
         iteration_count = 0
-        
+        file_id = context.get("file_id")
+        employee_id = context.get("employee_id")
+
         # Generate the system prompt with relevant rules and context
         system_prompt = self._generate_system_prompt(context, possible_duplicate_data)
+
+        self.agents_worker.update_stage(
+            file_id=file_id,
+            stage=5,
+            details={
+                "file_id" : file_id,
+                "employee_id" : employee_id,
+                "system_prompt" : system_prompt,
+                "stage_name" : "Preparing System Prompt for Orchestrator"
+            }
+        )
         
         # Initialize conversation if empty
         if not context.get("conversation"):
@@ -319,7 +351,15 @@ IMPORTANT: There are high chances of this receipt/invoice being a duplicate, per
                     tool_params["final_tool_call"] = is_final_call
                     
                     # Execute the tool
-                    tool_result = await self._execute_tool(tool_name, tool_params, origin_image_base_64, possible_duplicate_data)
+                    tool_result = await self._execute_tool(
+                        file_id,
+                        employee_id,
+                        max_iterations,
+                        tool_name, 
+                        tool_params, 
+                        origin_image_base_64, 
+                        possible_duplicate_data,
+                    )
                     
                     # Add the tool result to the conversation
                     tool_result_message = f"""<tool_result>
