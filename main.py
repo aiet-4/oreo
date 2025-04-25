@@ -40,7 +40,8 @@ app = FastAPI(title="Receipt Processing API")
 # Allow CORS for specific origins
 origins = [
     "https://aietg4.netlify.app",
-    "http://localhost:3000"
+    "http://localhost:3000",
+    "http://0.0.0.0:8086"
 ]
 
 app.add_middleware(
