@@ -138,6 +138,10 @@ class Orchestrator:
             exec_params["employee_id"] = employee_id
             exec_params["max_iterations"] = max_iterations
             exec_params["reasoning"] = reasoning
+            exec_params["tool"] = {
+                "tool_name" : f"**{tool_name}**",
+                "tool_params" : parameters
+            }
             
             if asyncio.iscoroutinefunction(tool_func):
                 result = await tool_func(**exec_params)

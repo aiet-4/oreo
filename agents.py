@@ -195,7 +195,8 @@ class AgentsWorker:
                 "subject" : subject,
                 "content" : content,
                 "stage_name" : "Send Email",
-                "reasoning" : kwargs.get("reasoning")
+                "reasoning" : kwargs.get("reasoning"),
+                "tool" : kwargs.get("tool")
             }
         )
         try:            
@@ -245,7 +246,8 @@ class AgentsWorker:
                         "employee_id" : kwargs.get("employee_id"),
                         "stage_name" : "Get Employee Details",
                         "employee_data" : employee_data,
-                        "reasoning" : kwargs.get("reasoning")
+                        "reasoning" : kwargs.get("reasoning"),
+                        "tool" : kwargs.get("tool")
                     }
                 )  
             return json.loads(employee_data)
@@ -290,7 +292,8 @@ class AgentsWorker:
                         "update_type" : "Incrementing",
                         "from" : current_amount,
                         "to" : current_amount + int(float(amount)),
-                        "reasoning" : kwargs.get("reasoning")
+                        "reasoning" : kwargs.get("reasoning"),
+                        "tool" : kwargs.get("tool")
                     }
                 )             
             else:                
@@ -306,7 +309,8 @@ class AgentsWorker:
                         "update_type" : "Decrementing",
                         "from" : current_amount,
                         "to" : max(0, current_amount - int(float(amount))),
-                        "reasoning" : kwargs.get("reasoning")
+                        "reasoning" : kwargs.get("reasoning"),
+                        "tool" : kwargs.get("tool")
                     }
                 )
             
@@ -374,7 +378,8 @@ class AgentsWorker:
                     "src" : src_location,
                     "dest" : dest_location,
                     "office" : self.office_location,
-                    "reasoning" : kwargs.get("reasoning")
+                    "reasoning" : kwargs.get("reasoning"),
+                    "tool" : kwargs.get("tool")
                 }
             ) 
             return src_distance <= 2.5 or dest_distance <= 2.5
@@ -404,7 +409,8 @@ class AgentsWorker:
                     "employee_id" : kwargs.get("employee_id"),
                     "stage_name" : "Duplicate Check using Large VLM",
                     "comment" : duplicate_receipts_comment,
-                    "reasoning" : kwargs.get("reasoning")
+                    "reasoning" : kwargs.get("reasoning"),
+                    "tool" : kwargs.get("tool")
                 }
             ) 
             return duplicate_receipts_comment
