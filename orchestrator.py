@@ -102,6 +102,7 @@ class Orchestrator:
     
     async def _execute_tool(
         self, 
+        reasoning: str,
         file_id,
         employee_id,
         max_iterations,
@@ -136,6 +137,7 @@ class Orchestrator:
             exec_params["file_id"] = file_id
             exec_params["employee_id"] = employee_id
             exec_params["max_iterations"] = max_iterations
+            exec_params["reasoning"] = reasoning
             
             if asyncio.iscoroutinefunction(tool_func):
                 result = await tool_func(**exec_params)
@@ -352,13 +354,14 @@ IMPORTANT: There are high chances of this receipt/invoice being a duplicate, per
                     
                     # Execute the tool
                     tool_result = await self._execute_tool(
+                        parsed_response.get('reasoning'),
                         file_id,
                         employee_id,
                         max_iterations,
                         tool_name, 
                         tool_params, 
                         origin_image_base_64, 
-                        possible_duplicate_data,
+                        possible_duplicate_data
                     )
                     
                     # Add the tool result to the conversation
