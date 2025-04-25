@@ -1,0 +1,12 @@
+[
+  {
+    "merchant": "Walmart",
+    "date": "2024-03-01",
+    "amount": 25.00
+  },
+  {
+    "merchant": "Starbucks",
+    "date": "2024-03-03",
+    "amount": 5.50
+  }
+]
