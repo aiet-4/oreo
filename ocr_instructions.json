@@ -1,0 +1,6 @@
+{
+    "FOOD_EXPENSE": "- Merchant/Store name\n - Date of Purchase\n - Time of Purchase\n - Time of Purchase is After 7PM (Yes/No)\n - Receipt/transaction number\n - Payment method (cash, credit card, etc.)\n - Total Tax (Use if CGST and SGST are not available)\n - Total amount",
+    "TRAVEL_EXPENSE": "- Merchant/Store Name\n - Date of Purchase\n - Time of Purchase\n - Date of Travel\n - Time of Travel\n - Travelling Mode (Taxi Cab, Flight, Train, Bus, etc.)\n - Jounrey Start Point\n - Journey End Point\n - Total amount",
+    "TECH_EXPENSE": "- Merchant/Store Name\n - Date of Purchase\n - Purchase Mode (Online, Offline)\n - Product Name\n - Product Category (Laptop, Mobile, etc.)\n - Product Model\n - Product Serial Number\n - Payment Mode (cash, credit card, etc.)\n - Total Tax\n - Total Amount",
+    "OTHER_EXPENSE": "Describe the receipt in LESS THAN 30 words"
+}
