@@ -65,6 +65,7 @@ class AgentsWorker:
         
         # Initialize dummy employee data in Redis for demonstration
         self._clear_redis_receipts_data()
+        self._clear_all_files()
         self._initialize_dummy_data()
 
     def _clear_redis_receipts_data(self):
@@ -78,6 +79,41 @@ class AgentsWorker:
                 print("No receipt data found in Redis.")
         except Exception as e:
             print(f"Error clearing receipt data: {str(e)}")
+
+    def _clear_all_files(self):
+        """
+        Clear all file-related data from Redis
+        
+        Returns:
+            dict: Summary of deletion operation
+        """
+        try:
+            # Find all keys matching the pattern
+            file_keys = list(self.redis.scan_iter("files:*"))
+            
+            if not file_keys:
+                return {"status": "success", "message": "No file data found to delete", "count": 0}
+            
+            # Delete all file keys
+            delete_count = 0
+            for key in file_keys:
+                self.redis.delete(key)
+                delete_count += 1
+            
+            return {
+                "status": "success", 
+                "message": f"Successfully deleted {delete_count} file-related entries", 
+                "count": delete_count
+            }
+            
+        except Exception as e:
+            error_message = str(e)
+            print(f"Error clearing file data: {error_message}")
+            return {
+                "status": "error",
+                "message": f"Failed to clear file data: {error_message}",
+                "count": 0
+            }
 
     def get_employees_details(
         self
@@ -194,21 +230,22 @@ class AgentsWorker:
             dict: Employee data or None if not found
         """
         employee_data = self.redis.get(f"employee:{employee_id}")
-        self.update_stage(
-            file_id=kwargs.get("file_id"),
-            stage=6,
-            sub_stage=kwargs.get("max_iterations"),
-            details={
-                "file_id" : kwargs.get("file_id"),
-                "employee_id" : kwargs.get("employee_id"),
-                "stage_name" : "Get Employee Details",
-                "employee_data" : employee_data
-            }
-        )        
+      
         if employee_data:
             # Decode bytes to string before parsing JSON
             if isinstance(employee_data, bytes):
                 employee_data = employee_data.decode('utf-8')
+                self.update_stage(
+                    file_id=kwargs.get("file_id"),
+                    stage=6,
+                    sub_stage=kwargs.get("max_iterations"),
+                    details={
+                        "file_id" : kwargs.get("file_id"),
+                        "employee_id" : kwargs.get("employee_id"),
+                        "stage_name" : "Get Employee Details",
+                        "employee_data" : employee_data
+                    }
+                )  
             return json.loads(employee_data)
         return None
     
@@ -368,7 +405,7 @@ class AgentsWorker:
         except Exception as e:
             print(f"Error checking for duplicate receipts: {str(e)} | {traceback.format_exc()}")
             return "Duplicate Check Tool was not able to process the images. Proceed with the assumption that receipt is NOT a duplicate."
-        
+
     def update_stage(
         self,
         file_id,
@@ -377,42 +414,116 @@ class AgentsWorker:
         sub_stage=None
     ):
         try:
+
+            # Prevent None file_id
+            if file_id is None:
+                print("Warning: Attempted to update stage with None file_id")
+                return False    
+                    
             # Create a Redis key for the file
             file_key = f"files:{file_id}"
             
-            # If sub_stage exists, include it in the stage key
+            # Generate a stage identifier (without sub_stage logic)
+            stage_identifier = f"stage:{stage}"
             if sub_stage is not None:
-                stage_key = f"{file_key}:stage:{stage}:{sub_stage}"
-            else:
-                stage_key = f"{file_key}:stage:{stage}"
-            
-            # Store stage details under the stage-specific key
-            details["stage"] = stage
-            if sub_stage:
+                # Still include sub_stage in details if provided
                 details["sub_stage"] = sub_stage
-            self.redis.set(stage_key, json.dumps(details))
+            
+            # Add stage metadata to details
+            details["stage"] = stage
+            
+            # Check if this stage already exists
+            if self.redis.hexists(file_key, stage_identifier):
+                # Stage exists - get the existing data
+                existing_data_json = self.redis.hget(file_key, stage_identifier)
+                existing_data_str = existing_data_json.decode('utf-8') if isinstance(existing_data_json, bytes) else existing_data_json
+                existing_data = json.loads(existing_data_str)
+                
+                # Check if existing data is already an array
+                if isinstance(existing_data, list):
+                    # Already an array, just append the new item
+                    existing_data.append(details)
+                else:
+                    # Convert to array with both old and new items
+                    existing_data = [existing_data, details]
+                
+                # Store the updated array
+                self.redis.hset(file_key, stage_identifier, json.dumps(existing_data))
+                print(f"Appended to existing stage {stage_identifier} for file {file_id}")
+            else:
+                # Stage doesn't exist - store as a single item
+                self.redis.hset(file_key, stage_identifier, json.dumps(details))
+                print(f"Created new stage {stage_identifier} for file {file_id}")
+            
             return True
 
         except Exception as e:
             print(f"Error updating stage: {str(e)}")
             return False
+
+    def get_all_files_details(self):
+        try:
+            # Fetch all file keys matching the pattern
+            file_keys = list(self.redis.scan_iter("files:*"))
+            
+            result = {}
+            for key in file_keys:
+                # Convert key to string if it's bytes
+                key_str = key.decode('utf-8') if isinstance(key, bytes) else key
+                
+                # Skip keys that aren't main file keys
+                if ":stage:" in key_str:
+                    continue
+                    
+                file_id = key_str.split(':')[1]
+                
+                # Check key type and use appropriate Redis command
+                key_type = self.redis.type(key)
+                key_type_str = key_type.decode('utf-8') if isinstance(key_type, bytes) else key_type
+                
+                if key_type_str == 'hash':
+                    # For hash type, get all fields
+                    all_stages_raw = self.redis.hgetall(key)
+                    
+                    # Parse the JSON in each field
+                    parsed_stages = {}
+                    for stage_key, stage_value in all_stages_raw.items():
+                        # Convert from bytes if needed
+                        stage_key_str = stage_key.decode('utf-8') if isinstance(stage_key, bytes) else stage_key
+                        stage_value_str = stage_value.decode('utf-8') if isinstance(stage_value, bytes) else stage_value
+                        
+                        # Parse the JSON
+                        try:
+                            parsed_stages[stage_key_str] = json.loads(stage_value_str)
+                        except json.JSONDecodeError:
+                            parsed_stages[stage_key_str] = {"error": "Invalid JSON", "raw": stage_value_str}
+                    
+                    result[file_id] = parsed_stages
+                    
+                elif key_type_str == 'string':
+                    # For string type, get and parse the value
+                    value = self.redis.get(key)
+                    value_str = value.decode('utf-8') if isinstance(value, bytes) else value
+                    
+                    try:
+                        result[file_id] = json.loads(value_str)
+                    except json.JSONDecodeError:
+                        result[file_id] = {"error": "Invalid JSON", "raw": value_str}
+                else:
+                    result[file_id] = {"error": f"Unsupported key type: {key_type_str}"}
+                    
+            return result
+            
+        except Exception as e:
+            print(f"Error inspecting Redis: {str(e)}")
+            return {"error": str(e)}
         
-    def get_all_files_details(
+    def clear_files_and_duplicates(
         self
     ):
         try:
-            # Fetch all employee data from Redis
-            keys = self.redis.keys("files:*")
-            employees = {}
-            for key in keys:
-                emp_id = key.decode('utf-8').split(":")[1]
-                emp_data = self.redis.get(key)
-                if emp_data:
-                    # Decode bytes to string before parsing JSON
-                    if isinstance(emp_data, bytes):
-                        emp_data = emp_data.decode('utf-8')
-                    employees[emp_id] = json.loads(emp_data)
-            return employees
+            self._clear_all_files()
+            self._clear_redis_receipts_data()
+            return True
         except Exception as e:
-            print(f"Error fetching files details: {str(e)}")
-            return {}
+            return False

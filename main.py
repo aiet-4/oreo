@@ -95,7 +95,26 @@ async def get_employee_details():
             status_code=500,
             content={"error": "An error occurred while retrieving file details"}
         )
+    
 
+@app.get("/clearAllRedisData")
+async def clear_all_redis_data():
+    """
+    Clear all redis data
+    """
+    try:
+        clear_success = agents_worker.clear_files_and_duplicates()
+        return {
+            "message": "All Data Cleared Successfully",
+            "data": clear_success
+        }
+    except Exception as e:
+        logger.error(f"Error clearing redis data: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "An error occurred while clearing redis data"}
+        )
+    
 @app.post("/processReceipt")
 async def upload_receipt(
     employee_id: str = Form(...),
