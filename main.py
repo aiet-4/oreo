@@ -103,7 +103,7 @@ async def get_employee_details():
         all_employees_data = agents_worker.get_all_files_details()
         return {
             "message": "file details retrieved successfully",
-            "data": all_employees_data if all_employees_data else []
+            "data": all_employees_data
         }
     except Exception as e:
         logger.error(f"Error retrieving file details: {str(e)}")
