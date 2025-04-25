@@ -454,6 +454,7 @@ Parameters: {{ "employee_id": "EMPLOYEE_ID" }}
 - **If for validation purpose, a tool is NOT available, perform it inside the reasoning and then continue with the next step**
 - NEVER fabricate your own rules, ONLY refer to applicable business rules
 - Only send email as the final step of the process
+- Email content should have greeting with name, body and finally outro saying "From HR Bot" with all three sections separated by newlines
 {f"""
 - If a duplicate receipt is confirmed, get employee data and send email to employee with justification
 """ if possible_duplicate_data else ""}

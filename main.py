@@ -11,6 +11,7 @@ from loguru import logger
 from dotenv import load_dotenv
 from models import AddEmployee
 import os
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
@@ -35,6 +36,20 @@ orchestrator = Orchestrator(
 logger.success("Orchestrator Initialized")
 
 app = FastAPI(title="Receipt Processing API")
+
+# Allow CORS for specific origins
+origins = [
+    "https://aietg4.netlify.app",
+    "http://localhost:3000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/getEmployeeDetails")
